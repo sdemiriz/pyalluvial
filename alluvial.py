@@ -35,12 +35,10 @@ class Alluvial:
         self.left_heights = self.data.groupby([self.left]).size().values[::-1]
         self.right_heights = self.data.groupby([right]).size().values[::-1]
 
-        print(self.data.groupby([self.left]).size()["one"])
-
         self.rect_width = 0.1
         self.fontsize = 16
         self.gap = 0.2
-        self.text_offset = 0.11
+        self.text_offset = 0.01
         self.flow_offset = 0.2
         self.x_values = range(0, len(sizes) + 1, len(sizes))
 
@@ -88,38 +86,38 @@ class Alluvial:
 
     def add_labels(self):
 
-        self.ax.text(
-            s="one",
-            x=-0.01,
-            y=sum(self.right_heights) / 2,
-            ha="right",
-            va="center",
-            fontsize=self.fontsize,
+        left_x, right_x = self.x_values
+
+        self.add_labels_one_side(
+            x=left_x,
+            col=self.left,
+            heights=self.left_heights,
+            alignment="right",
+            offset=-self.text_offset,
         )
-        self.ax.text(
-            s="two",
-            x=self.x_values[-1] + self.text_offset,
-            y=2 / 2,
-            ha="left",
-            va="center",
-            fontsize=self.fontsize,
+
+        self.add_labels_one_side(
+            x=right_x,
+            col=self.right,
+            heights=self.right_heights,
+            alignment="left",
+            offset=self.rect_width + self.text_offset,
         )
-        self.ax.text(
-            s="three",
-            x=self.x_values[-1] + self.text_offset,
-            y=2 + 3 / 2,
-            ha="left",
-            va="center",
-            fontsize=self.fontsize,
-        )
-        self.ax.text(
-            s="four",
-            x=self.x_values[-1] + self.text_offset,
-            y=7,
-            ha="left",
-            va="center",
-            fontsize=self.fontsize,
-        )
+
+    def add_labels_one_side(self, x, col, heights, offset, alignment):
+
+        cumulative_height = 0
+        for s, h in zip(self.data[col].unique(), heights):
+
+            self.ax.text(
+                s=s,
+                x=x + offset,
+                y=cumulative_height + h / 2,
+                ha=alignment,
+                va="center",
+                fontsize=self.fontsize,
+            )
+            cumulative_height += h + self.gap
 
     def draw_flow(self, hi_lo_y, cumulative_gap):
 
