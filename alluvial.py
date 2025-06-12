@@ -26,11 +26,16 @@ class Alluvial:
     def __init__(self, df, left, right):
         self.fig, self.ax = plt.subplots(figsize=(5, 5), layout="constrained")
 
-        self.data = df[[left, right]]
-        sizes = self.size(right)
+        self.left = left
+        self.right = right
 
-        self.left_heights = self.data.groupby([left]).size().values[::-1]
-        self.right_heights = self.data.groupby([left, right]).size().values[::-1]
+        self.data = df[[self.left, self.right]]
+        sizes = self.size(self.right)
+
+        self.left_heights = self.data.groupby([self.left]).size().values[::-1]
+        self.right_heights = self.data.groupby([right]).size().values[::-1]
+
+        print(self.data.groupby([self.left]).size()["one"])
 
         self.rect_width = 0.1
         self.fontsize = 16
