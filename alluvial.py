@@ -68,14 +68,18 @@ class Alluvial:
             x=-0.01,
             y=5 / 2,
             ha="right",
+            va="center",
             fontsize=self.fontsize,
         )
-        self.ax.text(s="two", x=2.11, y=2 / 2, ha="left", fontsize=self.fontsize)
+        self.ax.text(
+            s="two", x=2.11, y=2 / 2, ha="left", va="center", fontsize=self.fontsize
+        )
         self.ax.text(
             s="three",
             x=2.11,
             y=2 + 3 / 2,
             ha="left",
+            va="center",
             fontsize=self.fontsize,
         )
 
