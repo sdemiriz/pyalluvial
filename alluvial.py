@@ -85,8 +85,7 @@ class Alluvial:
         right_x = self.x_values[1]
         mid_x = (left_x + right_x) / 3
 
-        hi_y = hi_lo_y[0]
-        low_y = hi_lo_y[1]
+        hi_y, lo_y = hi_lo_y
 
         verts_top = [
             (left_x, hi_y + cumulative_gap),
@@ -95,14 +94,14 @@ class Alluvial:
             (right_x, hi_y + cumulative_gap),
         ]
         verts_bottom = [
-            (left_x, low_y),
-            (mid_x, low_y),
-            (2 * mid_x, low_y),
-            (right_x, low_y + cumulative_gap),
+            (left_x, lo_y),
+            (mid_x, lo_y),
+            (2 * mid_x, lo_y),
+            (right_x, lo_y + cumulative_gap),
         ]
 
-        curve1 = self.bezier_curve(verts_top, num_points=100)
-        curve2 = self.bezier_curve(verts_bottom, num_points=100)
+        curve1 = self.bezier_curve(verts_top, num_points=50)
+        curve2 = self.bezier_curve(verts_bottom, num_points=50)
 
         self.ax.fill_between(
             x=curve1[:, 0],
@@ -113,7 +112,7 @@ class Alluvial:
         )
 
     @staticmethod
-    def bezier_curve(points, num_points=100):
+    def bezier_curve(points, num_points):
         n = len(points) - 1
         t = np.linspace(0, 1, num_points)
         curve_points = np.zeros((num_points, 2))
