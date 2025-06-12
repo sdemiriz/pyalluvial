@@ -5,7 +5,7 @@ import matplotlib.path as p
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv("first.csv")
+df = pd.read_csv("second.csv")
 
 
 class Alluvial:
@@ -21,13 +21,16 @@ class Alluvial:
         self.rect_width = 0.1
         self.fontsize = 16
         self.gap = 0.2
+        self.text_offset = 0.11
+        self.flow_offset = 0.2
         self.x_values = range(0, len(sizes) + 1, len(sizes))
 
-        self.colors = ["#00ff00ff", "#0000ffff"]
+        self.colors = ["#00ff00ff", "#0000ffff", "#ffff00ff"]
 
         self.draw_rectangles()
-        self.draw_flow(hi_lo_y=(5, 2), cumulative_gap=self.gap)
-        self.draw_flow(hi_lo_y=(2, 0), cumulative_gap=0)
+        self.draw_flow(hi_lo_y=(9, 5), cumulative_gap=2 * self.gap)
+        self.draw_flow(hi_lo_y=(5, 2), cumulative_gap=1 * self.gap)
+        self.draw_flow(hi_lo_y=(2, 0), cumulative_gap=0 * self.gap)
         self.add_labels()
 
         plt.axis("off")
@@ -55,8 +58,7 @@ class Alluvial:
             Rectangle(
                 xy=(left_x, 0),
                 width=self.rect_width,
-                height=sum(self.right_heights)
-                + (len(self.right_heights) - 1) * self.gap,
+                height=sum(self.right_heights),
                 facecolor="#ff0000ff",
             )
         )
@@ -66,18 +68,31 @@ class Alluvial:
         self.ax.text(
             s="one",
             x=-0.01,
-            y=5 / 2,
+            y=sum(self.right_heights) / 2,
             ha="right",
             va="center",
             fontsize=self.fontsize,
         )
         self.ax.text(
-            s="two", x=2.11, y=2 / 2, ha="left", va="center", fontsize=self.fontsize
+            s="two",
+            x=self.x_values[-1] + self.text_offset,
+            y=2 / 2,
+            ha="left",
+            va="center",
+            fontsize=self.fontsize,
         )
         self.ax.text(
             s="three",
-            x=2.11,
+            x=self.x_values[-1] + self.text_offset,
             y=2 + 3 / 2,
+            ha="left",
+            va="center",
+            fontsize=self.fontsize,
+        )
+        self.ax.text(
+            s="four",
+            x=self.x_values[-1] + self.text_offset,
+            y=7,
             ha="left",
             va="center",
             fontsize=self.fontsize,
@@ -92,15 +107,15 @@ class Alluvial:
         hi_y, lo_y = hi_lo_y
 
         verts_top = [
-            (left_x, hi_y + cumulative_gap),
+            (left_x, hi_y),
             (mid_x, hi_y),
-            (2 * mid_x, hi_y),
+            (2 * mid_x, hi_y - self.flow_offset),
             (right_x, hi_y + cumulative_gap),
         ]
         verts_bottom = [
             (left_x, lo_y),
             (mid_x, lo_y),
-            (2 * mid_x, lo_y),
+            (2 * mid_x, lo_y + self.flow_offset),
             (right_x, lo_y + cumulative_gap),
         ]
 
