@@ -1,7 +1,9 @@
 from matplotlib.patches import Rectangle, PathPatch
+from scipy.special import comb
 import matplotlib.pyplot as plt
 import matplotlib.path as p
 import pandas as pd
+import numpy as np
 
 df = pd.read_csv("first.csv")
 
@@ -9,107 +11,118 @@ df = pd.read_csv("first.csv")
 class Alluvial:
 
     def __init__(self, df, left, right):
-        self.fig, self.ax = plt.subplots(figsize=(5, 5))
-
-        plt.axis("off")
+        self.fig, self.ax = plt.subplots(figsize=(5, 5), layout="constrained")
 
         self.data = df[[left, right]]
         sizes = self.size(right)
 
-        self.ax.set_xlim(0, 2.2)
-        self.ax.set_ylim(0, 5.1)
+        self.right_heights = self.data.groupby([left, right]).size().values[::-1]
+
+        self.rect_width = 0.1
+        self.fontsize = 16
+        self.gap = 0.2
+        self.x_values = range(0, len(sizes) + 1, len(sizes))
+
+        self.colors = ["#00ff00ff", "#0000ffff"]
 
         self.draw_rectangles()
-        self.draw_flows()
+        self.draw_flow(hi_lo_y=(5, 2), cumulative_gap=self.gap)
+        self.draw_flow(hi_lo_y=(2, 0), cumulative_gap=0)
         self.add_labels()
 
+        plt.axis("off")
         plt.savefig("first.png", dpi=300)
 
     def size(self, col):
         return self.data.groupby(col).size()[::-1].values
 
     def draw_rectangles(self):
-        width = 0.1
+        left_x, right_x = self.x_values
+
+        cumulative_height = 0
+        for height, fc in zip(self.right_heights, self.colors):
+            self.ax.add_patch(
+                Rectangle(
+                    xy=(right_x, cumulative_height),
+                    width=self.rect_width,
+                    height=height,
+                    fc=fc,
+                )
+            )
+            cumulative_height += height + self.gap
+
         self.ax.add_patch(
             Rectangle(
-                xy=(0, 0),
-                width=width,
-                height=5,
-                facecolor="#ff00007f",
+                xy=(left_x, 0),
+                width=self.rect_width,
+                height=sum(self.right_heights)
+                + (len(self.right_heights) - 1) * self.gap,
+                facecolor="#ff0000ff",
             )
-        )
-        self.ax.add_patch(
-            Rectangle(xy=(2, 0), width=width, height=2, facecolor="#00ff007f")
-        )
-        self.ax.add_patch(
-            Rectangle(xy=(2, 2), width=width, height=3, facecolor="#0000ff7f")
         )
 
     def add_labels(self):
-        fontsize = 16
 
         self.ax.text(
             s="one",
             x=-0.01,
             y=5 / 2,
             ha="right",
-            fontsize=fontsize,
+            fontsize=self.fontsize,
         )
-        self.ax.text(s="two", x=2.11, y=2 / 2, ha="left", fontsize=fontsize)
+        self.ax.text(s="two", x=2.11, y=2 / 2, ha="left", fontsize=self.fontsize)
         self.ax.text(
             s="three",
             x=2.11,
             y=2 + 3 / 2,
             ha="left",
-            fontsize=fontsize,
+            fontsize=self.fontsize,
         )
 
-    def draw_flows(self):
-        verts = [(0.1, 2), (1, 2), (1, 2), (2, 2)]
-        path1 = p.Path(
-            vertices=verts,
-            codes=[p.Path.MOVETO, p.Path.CURVE4, p.Path.CURVE4, p.Path.CURVE4],
-        )
-        patch = PathPatch(path1, color="none", fc="none", lw=2)
-        self.ax.add_patch(patch)
+    def draw_flow(self, hi_lo_y, cumulative_gap):
 
-        verts = [(0.1, 0), (1, 0), (1, 0), (2, 0)]
-        path2 = p.Path(
-            vertices=verts,
-            codes=[p.Path.MOVETO, p.Path.CURVE4, p.Path.CURVE4, p.Path.CURVE4],
-        )
-        patch = PathPatch(path2, color="none", fc="none", lw=2)
-        self.ax.add_patch(patch)
+        left_x = self.x_values[0] + self.rect_width
+        right_x = self.x_values[1]
+        mid_x = (left_x + right_x) / 3
 
-        self.ax.fill_between(
-            path1.vertices[:, 0],
-            path1.vertices[:, 1],
-            path2.vertices[:, 1],
-            color="#00ff007f",
-        )
+        hi_y = hi_lo_y[0]
+        low_y = hi_lo_y[1]
 
-        verts = [(0.1, 2), (1, 2), (1, 2), (2, 2)]
-        path1 = p.Path(
-            vertices=verts,
-            codes=[p.Path.MOVETO, p.Path.CURVE4, p.Path.CURVE4, p.Path.CURVE4],
-        )
-        patch = PathPatch(path1, color="none", fc="none", lw=2)
-        self.ax.add_patch(patch)
+        verts_top = [
+            (left_x, hi_y + cumulative_gap),
+            (mid_x, hi_y),
+            (2 * mid_x, hi_y),
+            (right_x, hi_y + cumulative_gap),
+        ]
+        verts_bottom = [
+            (left_x, low_y),
+            (mid_x, low_y),
+            (2 * mid_x, low_y),
+            (right_x, low_y + cumulative_gap),
+        ]
 
-        verts = [(0.1, 5), (1, 5), (1, 5), (2, 5)]
-        path2 = p.Path(
-            vertices=verts,
-            codes=[p.Path.MOVETO, p.Path.CURVE4, p.Path.CURVE4, p.Path.CURVE4],
-        )
-        patch = PathPatch(path2, color="none", fc="none", lw=2)
-        self.ax.add_patch(patch)
+        curve1 = self.bezier_curve(verts_top, num_points=100)
+        curve2 = self.bezier_curve(verts_bottom, num_points=100)
 
         self.ax.fill_between(
-            path1.vertices[:, 0],
-            path1.vertices[:, 1],
-            path2.vertices[:, 1],
+            x=curve1[:, 0],
+            y1=curve1[:, 1],
+            y2=curve2[:, 1],
             color="#0000ff7f",
+            edgecolor="none",
         )
+
+    @staticmethod
+    def bezier_curve(points, num_points=100):
+        n = len(points) - 1
+        t = np.linspace(0, 1, num_points)
+        curve_points = np.zeros((num_points, 2))
+
+        for i in range(n + 1):
+            bernstein = comb(n, i) * (t**i) * ((1 - t) ** (n - i))
+            curve_points += np.outer(bernstein, points[i])
+
+        return curve_points
 
 
 Alluvial(df=df, left="a", right="b")
