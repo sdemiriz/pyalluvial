@@ -29,6 +29,7 @@ class Alluvial:
         self.data = df[[left, right]]
         sizes = self.size(right)
 
+        self.left_heights = self.data.groupby([left]).size().values[::-1]
         self.right_heights = self.data.groupby([left, right]).size().values[::-1]
 
         self.rect_width = 0.1
@@ -38,7 +39,7 @@ class Alluvial:
         self.flow_offset = 0.2
         self.x_values = range(0, len(sizes) + 1, len(sizes))
 
-        self.colors = ["#00ff00ff", "#0000ffff", "#ffff00ff"]
+        self.colors = example_colors[: len(self.right_heights) + 1]
 
         self.draw_rectangles()
         self.draw_flow(hi_lo_y=(9, 5), cumulative_gap=2 * self.gap)
@@ -55,26 +56,30 @@ class Alluvial:
     def draw_rectangles(self):
         left_x, right_x = self.x_values
 
+        self.draw_one_side(
+            x=left_x,
+            heights=self.left_heights,
+            colors=self.colors[-len(self.left_heights) :],
+        )
+        self.draw_one_side(
+            x=right_x,
+            heights=self.right_heights,
+            colors=self.colors[: len(self.right_heights) + 1],
+        )
+
+    def draw_one_side(self, x, heights, colors):
+
         cumulative_height = 0
-        for height, fc in zip(self.right_heights, self.colors):
+        for height, fc in zip(heights, colors):
             self.ax.add_patch(
                 Rectangle(
-                    xy=(right_x, cumulative_height),
+                    xy=(x, cumulative_height),
                     width=self.rect_width,
                     height=height,
                     fc=fc,
                 )
             )
             cumulative_height += height + self.gap
-
-        self.ax.add_patch(
-            Rectangle(
-                xy=(left_x, 0),
-                width=self.rect_width,
-                height=sum(self.right_heights),
-                facecolor="#ff0000ff",
-            )
-        )
 
     def add_labels(self):
 
